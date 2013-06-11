@@ -7,8 +7,21 @@ import HTMLParser
 
 def extractTags(url):
 
+    #orginal URL
     page = urllib.urlopen(url)
-    soup = BeautifulSoup(page)
+    actualURL = page.geturl()
+
+    #get item ID from redirected URL
+    indexOfLastSlash = actualURL.rfind("/")
+    workID = actualURL[indexOfLastSlash + 1:]
+
+    #get page with all tags
+    URLtoTags = 'http://www.librarything.com/ajaxinc_showbooktags.php?work={0}&all=1&print=1&doit=1'.format(workID)
+    tagPage = urllib.urlopen(URLtoTags)
+
+    print(URLtoTags)
+    
+    soup = BeautifulSoup(tagPage)
 
     for link in soup.find_all('a'):
 
@@ -16,11 +29,7 @@ def extractTags(url):
     
         if refType.startswith('/tag/'):
 
-            tagName = refType[5:].lower()
-            tagName = urllib.unquote(tagName).replace('+',' ').replace('-', ' ')
-            tagInfo.write(tagName + ',')
-            #print(tagName)
-
+            tagCount = 0
             countSpan = link.find_next("span")
             #print(countSpan)
                                        
@@ -29,12 +38,20 @@ def extractTags(url):
                 count = re.search('\d+', str(countSpan.contents))
                 tagCount = count.group(0)
             
-                #print(count)
+                #print(tagCount)
             
             else:
                 tagCount = '?'
 
-            tagInfo.write('{0},'.format(tagCount))
+
+            if (int(tagCount) > 1):
+
+                tagName = refType[5:].lower()
+                tagName = urllib.unquote(tagName).replace('+',' ').replace('-', ' ')
+                #print(tagName)
+            
+                tagInfo.write(tagName + ',')
+                tagInfo.write('{0},'.format(tagCount))
 
 
 tagDirectory = os.path.join(os.pardir, 'tag_data')
